@@ -24,12 +24,22 @@ def test_rule_4220():
                 "BOTH", # 2
                 "MWBC", # 3
                 "not real eth", # 4, fail
+                1,              # 5, fail
             ]
         }
     )
 
     result = rule_4220(ChildCharacteristics)
 
-    # Check if result is as expected
-    assert len(result) == 1, "expecting only 1 invalid ethnicity"
-    assert result == [4], "invalid ethnicity index should be [4]"
+    expected_fail_indices = [4,5]
+
+    assert result == expected_fail_indices
+
+
+    # # Check if result(s) is as expected
+    # assert len(result) == len(expected_fail_indices),   f"There should be {len(expected_fail_indices)} invalid vals, but found {len(result)}"
+    # assert result == expected_fail_indices,             f"The index of the invalid vals should be ...{result} "
+
+
+
+
