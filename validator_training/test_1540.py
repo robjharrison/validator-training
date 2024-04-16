@@ -1,43 +1,44 @@
-
 import pandas as pd
+import os
+
+def load_data_files(directory_path):
+    data_dict = {}
+    
+    # find all the csvs in path
+    for file in os.listdir(directory_path):
+        if file.endswith('.csv'):
+            file_path = os.path.join(directory_path, file)
+            # load each csv
+            df = pd.read_csv(file_path)
+            
+            # ensure data cols are consistent
+            for col in df.columns:
+                if 'Date' in col:   # look for col substring to id date cols
+                                    # and enforce format/consistency
+                    df[col] = pd.to_datetime(df[col], format="%d/%m/%Y", errors="coerce")
+            
+            # add df to dict
+            data_dict[file.replace('.csv', '')] = df
+    
+    return data_dict
+
 
 
 # - rule 1540: If UPN (N00001) present chars 5-12 must be numeric
-
-# def rule_1540(df):
-#     # check if 'UPN' exists. if not, return empty list
-#     if 'UPN' not in df.columns:
-#         return []
-
-#     # testing
-#     # print("UPN not NA:", df['UPN'].notna())
-#     # print("Is digit:", df['UPN'].str.slice(4, 12).str.isdigit())
-#     # print("Length >= 12:", df['UPN'].str.len() >= 12)
-
-#     # prob more readable than lambda use
-#     # conditions... if UPN is present and if characters 5-12 are numeric
-#     # condition = df['UPN'].notna() & \
-#     #             df['UPN'].str.slice(4, 12).str.isdigit() & \
-#     #             df['UPN'].str.len() >= 12
-
-#     condition = df['UPN'].notna() & df['UPN'].apply(lambda x: x[4:12].isdigit() if len(x) >= 12 else False)
-
-#     failing_rows = df[~condition].index
-
-#     return list(failing_rows)
 
 def rule_1540(df):
     if 'UPN' not in df.columns:
         return []
     
     def check_upn(upn):
+        # only arrive here if not na
         # do the rule checks
-        if len(upn) >= 13:  # UPN >13
-            slice_ = upn[4:13]  # slice 5th to 13th char (incl)
-            is_digit = slice_.isdigit()
+        if len(upn) >= 13:              # rule #1 if exists & valid size
+            slice_ = upn[4:13]          
+            is_digit = slice_.isdigit() # rule #2 numeric on 5th to 13th char (incl)
 
             # testing
-            print(f"Checking UPN '{upn}': Slice is '{slice_}', Is digit: {is_digit}")
+            print(f"UPN chk'{upn}': slice is '{slice_}', is digit/num: {is_digit}")
 
             return is_digit
         return False
@@ -56,10 +57,13 @@ def rule_1540(df):
 
 def test_rule_1540():
 
+    # opt1
+    # file path and get sample data file
+    directory_path = "/workspaces/validator-training/fake_cin_data"
+    data_dfs_dict = load_data_files(directory_path)
 
-    # df with UPN, valid(from ChildIdentifiers) n invalid records
-
-    # # use a cut-down/simplified df
+    # opt2
+    #    # use simplified df
     # ChildIdentifiers = pd.DataFrame({
     #     "UPN": [
     #         "A850728973744",  # 0 - valid
@@ -75,22 +79,9 @@ def test_rule_1540():
     #     ]
     # })
 
-    # Use the actual sample/fake data
-    ChildIdentifiers = pd.read_csv(
-        "/workspaces/validator-training/fake_cin_data/ChildIdentifiers.csv"
-    )
-    ChildIdentifiers["PersonBirthDate"] = pd.to_datetime(
-        ChildIdentifiers["PersonBirthDate"], format="%d/%m/%Y", errors="coerce"
-    )
-    ChildIdentifiers["ExpectedPersonBirthDate"] = pd.to_datetime(
-        ChildIdentifiers["ExpectedPersonBirthDate"], format="%d/%m/%Y", errors="coerce"
-    )
-    ChildIdentifiers["PersonDeathDate"] = pd.to_datetime(
-        ChildIdentifiers["PersonDeathDate"], format="%d/%m/%Y", errors="coerce"
-    )
-
-
-    result = rule_1540(ChildIdentifiers)
+    
+    # load data df
+    result = rule_1540(data_dfs_dict.get('ChildIdentifiers'))
 
     # Expect indices 4, 5, 8, 9 to fail is using the sample df
     assert result == [4, 5, 8, 9], f"Expected failing indices [4, 5, 8, 9], but got {result}"

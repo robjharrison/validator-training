@@ -39,6 +39,7 @@ def read_cin_data():
     CINplanDates = pd.read_csv(
         "/workspaces/validator-training/fake_cin_data/CINplanDates.csv"
     )
+    
     Header = pd.read_csv("/workspaces/validator-training/fake_cin_data/Header.csv")
     Header["ReferenceDate"] = pd.to_datetime(
         Header["ReferenceDate"], format="%d/%m/%Y", errors="coerce"
